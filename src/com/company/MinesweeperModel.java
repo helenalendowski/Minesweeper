@@ -162,16 +162,15 @@ public class MinesweeperModel extends Observable {
 
     }
 
-    public boolean checkLost(int row, int col){
+    public void checkLost(int row, int col){
         if(cellIsMine(row,col) == true){
             System.out.println("You lost.");
+            uncoverMines();
             setChanged();
             notifyObservers("LOST");
-            return true;
         }
         else{
             System.out.println("Game continues.");
-            return false;
         }
     }
 
@@ -197,8 +196,6 @@ public class MinesweeperModel extends Observable {
                 }
             }
         }
-        setChanged();
-        notifyObservers();
     }
 
     private void countDownNumCellsCovered(){
@@ -317,6 +314,7 @@ public class MinesweeperModel extends Observable {
     }
 
     public void setCellCover(int row, int col){
+        // Call en
         if(this.cellCover[row][col] == 1){
             this.cellCover[row][col] = 0;
             countDownNumCellsCovered();
@@ -328,7 +326,9 @@ public class MinesweeperModel extends Observable {
             setChanged();
         }
         notifyObservers();
-        checkWin();             // After uncovering the last clicked cell, check if the user won the game
+
+        checkLost(row,col);
+        checkWin();
     }
 
     public int getCellCover(int row, int col){

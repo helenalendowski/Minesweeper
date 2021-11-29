@@ -31,14 +31,7 @@ public class MinesweeperController implements Observer, ActionListener {
                 if (e.getSource() == view.buttons[row][col]) {
                     System.out.println("Event: " + e.getSource());
                     // Change model
-
-                    if(model.checkLost(row,col) == true){
-                        // DO explode all bombs in view
-                        model.uncoverMines();               // soll ich das vom Controller aufrufen oder aus checkLost im Model?
-                    }
-                    else{
-                        model.setCellCover(row, col);
-                    }
+                    model.setCellCover(row, col);
                 }
             }
         }

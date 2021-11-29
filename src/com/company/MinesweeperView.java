@@ -1,8 +1,11 @@
 package com.company;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
 import java.util.*;
 import java.awt.*;      // for action events
+import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.io.IOException;
+import java.io.*;
 
 public class MinesweeperView implements Observer{
     private MinesweeperModel model;
@@ -13,7 +16,11 @@ public class MinesweeperView implements Observer{
     JPanel title_panel;
     JLabel title;
     JButton [][] buttons;
-
+    Image bomb_0;
+    Image bomb_1;
+    Image bomb_2;
+    Image bomb_3;
+    Image bomb_4;
 
     public MinesweeperView(MinesweeperModel model) {
         this.model = model;
@@ -26,9 +33,48 @@ public class MinesweeperView implements Observer{
        // controller = new MinesweeperController(model, this);
     }
 
+    private void loadImages(int size){
+        try {
+            this.bomb_0 = new ImageIcon(this.getClass().getResource("/bomb_0.png")).getImage();
+            Image newimg = bomb_0.getScaledInstance(size, size,  java.awt.Image.SCALE_SMOOTH); // scale it the smooth way
+            this.bomb_0 = newimg;  // transform it back
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+        try {
+            this.bomb_1 = new ImageIcon(this.getClass().getResource("/bomb_1.png")).getImage();
+            Image newimg = bomb_1.getScaledInstance(size, size,  java.awt.Image.SCALE_SMOOTH); // scale it the smooth way
+            this.bomb_1 = newimg;  // transform it back
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+        try {
+            this.bomb_2 = new ImageIcon(this.getClass().getResource("/bomb_2.png")).getImage();
+            Image newimg = bomb_2.getScaledInstance(size, size,  java.awt.Image.SCALE_SMOOTH); // scale it the smooth way
+            this.bomb_2 = newimg;  // transform it back
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+        try {
+            this.bomb_3 = new ImageIcon(this.getClass().getResource("/bomb_3.png")).getImage();
+            Image newimg = bomb_3.getScaledInstance(size, size,  java.awt.Image.SCALE_SMOOTH); // scale it the smooth way
+            this.bomb_3 = newimg;  // transform it back
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+        try {
+            this.bomb_4 = new ImageIcon(this.getClass().getResource("/bomb_4.png")).getImage();
+            Image newimg = bomb_4.getScaledInstance(size, size,  java.awt.Image.SCALE_SMOOTH); // scale it the smooth way
+            this.bomb_4 = newimg;  // transform it back
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+    }
+
     private void display(){
         int size = model.getGridSize();
-        int frame_size = size * 50;
+        int button_size = 50;
+        int frame_size = size * button_size;
 
         frame = new JFrame();
         grid_panel = new JPanel(new GridLayout(size, size));
@@ -36,8 +82,7 @@ public class MinesweeperView implements Observer{
         title = new JLabel();
         title_panel = new JPanel();
 
-       //Icon icon = new ImageIcon("\\pictures\\bomb.PNG");
-
+        loadImages(button_size);
 
         // Define frame
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -68,7 +113,7 @@ public class MinesweeperView implements Observer{
             for(int col = 0; col < size; col++){
                 buttons[row][col] = new JButton();
                 grid_panel.add(buttons[row][col]);
-                buttons[row][col] .setFont(new Font("MV Boli", Font.BOLD, 15));
+                buttons[row][col].setFont(new Font("MV Boli", Font.BOLD, 15));
                 buttons[row][col].setFocusable(false);
                 buttons[row][col].addActionListener(controller);           // Add cell to the action listener
             }
@@ -79,16 +124,6 @@ public class MinesweeperView implements Observer{
         frame.add(title_panel, BorderLayout.NORTH);
         frame.add(grid_panel);
 
-
-
-        //JLabel weight_label = new JLabel("Weight (kg):");
-       // weight_label.setBounds(75, 20, 150, 30);
-       // firstFrame.add(weight_label);
-
-        // Frame should be defined at the end
-        //frame.setSize(400, 300);
-        //frame.setLayout(null);
-        //frame.setVisible(true);
     }
 
     public void setTitle(){
@@ -99,25 +134,32 @@ public class MinesweeperView implements Observer{
         JOptionPane.showMessageDialog(null, "You won!");
     }
 
-    public void lost(){
+    public void lost(int size){
+        for(int row=0; row < size; row++){
+            for(int col=0; col < size; col++) {
+                // Check if the cell is a mine
+                if (model.getCellNumber(row, col) == 9) {
+                    buttons[row][col].setIcon(new ImageIcon(bomb_2));
+                    System.out.println("BOOM");
+                }
+            }
+        }
         JOptionPane.showMessageDialog(null, "You lost!");
     }
 
     public void update(Observable source, Object args){
         System.out.println("View: update: ");
+        int size = model.getGridSize();
 
         if (args != null) {
             String event = (String)args;
             if (event.equals("LOST")) {
-                lost();
+                lost(size);
             }
             if (event.equals("WON")) {
                 won();
             }
         }
-        //resultLabel.setText("Result: " + model.calculateBMI());
-
-        int size = model.getGridSize();
 
         // Update cell view
         for(int row=0; row < size; row++){
@@ -125,7 +167,7 @@ public class MinesweeperView implements Observer{
 
                 // Check if the cell is uncovered
                 if(model.getCellCover(row, col) == 0){
-                    buttons[row][col].setBackground(new Color(232,235,247));
+                    buttons[row][col].setBackground(new Color(255,255,255));
 
                     int num =  model.getCellNumber(row,col);
                     switch (num){
@@ -164,8 +206,8 @@ public class MinesweeperView implements Observer{
                             buttons[row][col].setText("8");
                             break;
                         case 9:
-                            buttons[row][col].setForeground(new Color(37,37,37));
-                            buttons[row][col].setText("X");
+                            //buttons[row][col].setForeground(new Color(37,37,37));
+                            //buttons[row][col].setText("X");
                             break;
                         default: break;
                     }
