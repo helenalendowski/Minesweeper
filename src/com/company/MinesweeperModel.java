@@ -37,7 +37,6 @@ public class MinesweeperModel extends Observable {
         return this.numMines;
     }
 
-
     private boolean cellIsMine (int row, int col) {
         // Check whether the given cell (row, col) is a mine
         if (grid[row][col] == 9)
