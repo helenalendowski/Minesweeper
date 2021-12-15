@@ -2,39 +2,65 @@ package com.company;
 import java.util.*;
 
 /*
-    Game logic: Each cell shows the amount of neighbour fields with mines
+    The model implements the game logic.
+    Each cell shows the amount of neighbour cells with mines
     0: no mines
     1: one mine
+    2: two mines
     ...
+    8: all neighbours are mines
     9: cell is a mine
 */
 
 public class MinesweeperModel extends Observable {
 
     private int [][] grid;          // Represents the cells containing the information about mines (Integers from 0 to 9)
-    private int [][] cellCover;
-    private int numCellsCovered;            // Number of covered cells in the grid
+    private int [][] cellCover;     // Represents the cells cover - 1: cell is covered, 0: cell is uncovered
+    private int numCellsCovered;    // Number of covered cells in the grid
     private int numMines;           // Number of mines in the grid
     private int gridSize;           // Number of cells in one row and column
+    private boolean gameEnd;
 
     public MinesweeperModel() {
         this.gridSize = 9;
         this.numMines = 10;
         this.grid = new int[gridSize][gridSize];
         this.cellCover = new int[gridSize][gridSize];
-        this.numCellsCovered = gridSize*gridSize;
         setUpBoard();
     }
 
-    public void setGridSize(int size){
+    private void setGridSize(int size){
+        /*
+            This function is currently not used.
+            For future implementation to enable difficulty levels:
+             beginner: 9x9 cells
+             intermediate: 16x16 cells
+             specialist: 30x16 cells
+
+         */
         this.gridSize = size;
     }
     public int getGridSize(){
         return this.gridSize;
     }
-    public void setNumMines(int num){ this.numMines = num; }
+    private void setNumMines(int num){
+        /*
+            This function is currently not used.
+            For future implementation to enable difficulty levels:
+             beginner: 10 mines
+             intermediate: 40 mines
+             specialist: 99 mines
+         */
+        this.numMines = num;
+    }
     public int getNumMines(){
         return this.numMines;
+    }
+    public int getCellNumber(int row, int col){
+        return this.grid[row][col];
+    }
+    public int getCellCover(int row, int col){
+        return this.cellCover[row][col];
     }
 
     private boolean cellIsMine (int row, int col) {
@@ -129,23 +155,26 @@ public class MinesweeperModel extends Observable {
         return (countMines);
     }
 
-    public void setUpBoard(){
+    private void setUpBoard(){
 
         // Define random positions for the mines
         int range = this.gridSize - 1;           //Create range for random number
         int rand1;
         int rand2;
 
+        // Set variables for game end
+        this.gameEnd = false;
+        this.numCellsCovered = gridSize*gridSize;
+
+        // Find positions for the mines
         for (int m = 0; m < this.numMines; m++){
            do{                                      //Do-While loop in case the same random numbers occur again
                 rand1 = (int)(Math.random() * range);
                 rand2 = (int)(Math.random() * range);
                 //System.out.println("Rand 1:" + rand1 + ", Rand 2: " + rand2);
-           }while (this.grid[rand1][rand2] == 9);    //If the cell is already a mine, calculate again
+           }while (cellIsMine(rand1, rand2));    //If the cell is already a mine, calculate again
             this.grid[rand1][rand2] = 9;
         }
-
-        //System.out.println("grid: " + grid);
 
         // Define the other cells according to the surrounded mines
         for (int row = 0; row < this.gridSize; row++){
@@ -161,34 +190,32 @@ public class MinesweeperModel extends Observable {
 
     }
 
-    public void checkLost(int row, int col){
+    private void checkLost(int row, int col){
         if(cellIsMine(row,col) == true){
             System.out.println("You lost.");
             uncoverMines();
             setChanged();
             notifyObservers("LOST");
+            this.gameEnd = true;
         }
         else{
             System.out.println("Game continues.");
         }
     }
 
-    public void checkWin(){
+    private void checkWin(){
         if(this.numCellsCovered == this.numMines){
             setChanged();
             notifyObservers("WON");
+            this.gameEnd = true;
         }
     }
 
-    public int getCellNumber(int row, int col){
-        return this.grid[row][col];
-    }
-
-    public void uncoverMines(){
+    private void uncoverMines(){
         for (int row = 0; row < this.gridSize; row++){
             for(int col = 0; col < this.gridSize; col++){
                 // Uncover all mines
-                this.cellCover[row][col] = 1;
+                // this.cellCover[row][col] = 1;
                 // Only if this cell is not a mine count the neighbour mines
                 if (cellIsMine(row, col) == true) {
                     this.cellCover[row][col] = 0;
@@ -295,7 +322,7 @@ public class MinesweeperModel extends Observable {
                 this.cellCover[row + 1][col] = 0;               // uncover the cell
                 countDownNumCellsCovered();
                 if (this.grid[row + 1][col] == 0) {             // if the number of neighbour mines is 0
-                    uncoverNeighbours(row + 1, col);    // uncover all its neighbours
+                    uncoverNeighbours(row + 1, col);        // uncover all its neighbours
                 }
             }
         }
@@ -312,26 +339,47 @@ public class MinesweeperModel extends Observable {
         }
     }
 
-    public void setCellCover(int row, int col){
-        // Call en
-        if(this.cellCover[row][col] == 1){
-            this.cellCover[row][col] = 0;
-            countDownNumCellsCovered();
-
-            // If the cell has no mines in the neighbourhood (grid[][] == 0), uncover all neighbours
-            if(this.grid[row][col] == 0){
-                uncoverNeighbours(row,col);
+    private void clearGrid(){
+        for (int row = 0; row < this.gridSize; row++){
+            for(int col = 0; col < this.gridSize; col++){
+                // Reset all cells to 0
+                this.grid[row][col] = 0;
+                // Reset all cells to covered
+                this.cellCover[row][col] = 1;
             }
-            setChanged();
         }
-        notifyObservers();
-
-        checkLost(row,col);
-        checkWin();
     }
 
-    public int getCellCover(int row, int col){
-        return this.cellCover[row][col];
+    public void performMove(int row, int col){
+        /*
+            This function performs a users move and is called by the controller.
+            The input of the function is the cell that has been clicked to uncover.
+            If the game is already finished reset the grid and set up a new game.
+            Otherwise, check if the clicked cell is still uncovered. If yes, set the cell cover to uncovered (=0)
+            If the cell has no neighbour mines, uncover all it's neighbours as well
+         */
+        if(this.gameEnd == true){
+            clearGrid();
+            setUpBoard();
+            System.out.println("Game end, set up new game.");
+            setChanged();
+            notifyObservers("NEWGAME");
+        }
+        else {
+            if (this.cellCover[row][col] == 1) {
+                this.cellCover[row][col] = 0;
+                countDownNumCellsCovered();
+
+                // If the cell has no mines in the neighbourhood (grid[][] == 0), uncover all neighbours
+                if (this.grid[row][col] == 0) {
+                    uncoverNeighbours(row, col);
+                }
+                setChanged();
+                notifyObservers();
+                checkLost(row,col);
+                checkWin();
+            }
+        }
     }
 
 }

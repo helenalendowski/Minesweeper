@@ -31,7 +31,7 @@ public class MinesweeperController implements Observer, ActionListener {
                 if (e.getSource() == view.buttons[row][col]) {
                     System.out.println("Event: " + e.getSource());
                     // Change model
-                    model.setCellCover(row, col);
+                    model.performMove(row, col);
                 }
             }
         }

@@ -1,32 +1,29 @@
 package com.company;
-import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
 import java.util.*;
-import java.awt.*;      // for action events
-import javax.imageio.ImageIO;
+import java.awt.*;
+import java.util.concurrent.TimeUnit;
 import javax.swing.*;
-import java.io.*;
 
 public class MinesweeperView implements Observer, Runnable{
     private MinesweeperModel model;
     private MinesweeperController controller;
 
-    JFrame frame;
-    JPanel grid_panel;
-    JPanel title_panel;
-    JLabel title;
+    private JFrame frame;
+    private JPanel grid_panel;
+    private JPanel title_panel;
+    private JLabel title;
     JButton [][] buttons;
 
     private boolean lostAnimation;
     private int animationCount;
     private double lastAnimationTime;
     private boolean running;
-    ImageIcon currentIcon;
-    Image bomb_0;
-    Image bomb_1;
-    Image bomb_2;
-    Image bomb_3;
-    Image bomb_4;
+    private ImageIcon currentIcon;
+    private Image bomb_0;
+    private Image bomb_1;
+    private Image bomb_2;
+    private Image bomb_3;
+    private Image bomb_4;
 
     public MinesweeperView(MinesweeperModel model) {
         this.model = model;
@@ -34,12 +31,12 @@ public class MinesweeperView implements Observer, Runnable{
         controller = new MinesweeperController(model, this);
         this.lostAnimation = false;
         this.animationCount = 0;
+        this.lastAnimationTime = 0;
         display();
         running = true;
         Thread t1= new Thread(this);
         t1.start();
     }
-
 
     public void run() {
         // This function contains the game loop pattern.
@@ -47,7 +44,6 @@ public class MinesweeperView implements Observer, Runnable{
         double previousTime = System.nanoTime();
         double currentTime;
         double elapsedTime;
-        this.lastAnimationTime = System.nanoTime();
 
         while (this.running) {
             currentTime = System.nanoTime();
@@ -58,13 +54,16 @@ public class MinesweeperView implements Observer, Runnable{
     }
 
     private void updateGameLoop(double elapsedTime){
-        double secondsElapsed = elapsedTime/1000.0;
-        // Slow down lost animation
-        //System.out.println("lostAnimation= " + this.lostAnimation);
-        if(this.lostAnimation == true && this.lastAnimationTime > 5000){    // && this.lastAnimationTime > 5000
-            lost();
-            System.out.println("Animation= " + this.animationCount);
-            this.lastAnimationTime = System.nanoTime();
+        double msecondsElapsed = elapsedTime/ 1000000;
+        this.lastAnimationTime = this.lastAnimationTime + msecondsElapsed;
+
+        // Slow down lost animation: update every 50 ms
+        if(this.lostAnimation == true){
+            if(this.lastAnimationTime >= 50){
+                lost();
+                System.out.println("Animation= " + this.animationCount);
+                this.lastAnimationTime = 0;
+            }
         }
         else{
             System.out.println("No Animation");
@@ -175,7 +174,6 @@ public class MinesweeperView implements Observer, Runnable{
     private void lost(){
         /* This function takes care of the animation of exploding mines once a mine has been discovered.
            Choose animation icon according to the animation count.
-           If the animation is done, show a message that the user lost.
          */
 
         int size = model.getGridSize();
@@ -196,6 +194,8 @@ public class MinesweeperView implements Observer, Runnable{
             case 4:
                 this.currentIcon = new ImageIcon(bomb_4);
                 this.lostAnimation = false;                 //Animation is done
+                this.animationCount = 0;                    //Reset animation count
+                //JOptionPane.showMessageDialog(null, "You lost!");
                 break;
             default: break;
         }
@@ -216,7 +216,11 @@ public class MinesweeperView implements Observer, Runnable{
     public void update(Observable source, Object args){
         /*
             This function updates the view if the model changes.
-         */
+            Button pressed: uncover changed cell(s) in the game grid
+            Lost: enable lost animation
+            Won: call the won function to show a notification
+            NewGame: the user either lost or won and pressed a button again which initializes a new game
+        */
         System.out.println("View: update: ");
         int size = model.getGridSize();
 
@@ -224,12 +228,12 @@ public class MinesweeperView implements Observer, Runnable{
             String event = (String)args;
             if (event.equals("LOST")) {
                 this.lostAnimation = true;
-
-                // this.animationCount = 0;
-               // lost(size);
             }
             if (event.equals("WON")) {
                 won();
+            }
+            if(event.equals("NEWGAME")){
+                display();
             }
         }
 
@@ -237,13 +241,16 @@ public class MinesweeperView implements Observer, Runnable{
         for(int row=0; row < size; row++){
             for(int col=0; col < size; col++) {
 
-                // Check if the cell is uncovered
+                // Check if the cell is uncovered, show the number of neighbour mines on the button
                 if(model.getCellCover(row, col) == 0){
+
+                    // Change the background of the button to show the cell is uncovered
                     buttons[row][col].setBackground(new Color(255,255,255));
 
                     int num =  model.getCellNumber(row,col);
                     switch (num){
                         case 0:
+                            // don't show a number
                             break;
                         case 1:
                             buttons[row][col].setForeground(new Color(55,126,184));
