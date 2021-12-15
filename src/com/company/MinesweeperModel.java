@@ -215,7 +215,6 @@ public class MinesweeperModel extends Observable {
         for (int row = 0; row < this.gridSize; row++){
             for(int col = 0; col < this.gridSize; col++){
                 // Uncover all mines
-                // this.cellCover[row][col] = 1;
                 // Only if this cell is not a mine count the neighbour mines
                 if (cellIsMine(row, col) == true) {
                     this.cellCover[row][col] = 0;
